@@ -5,7 +5,7 @@ const path = require('path');
 const app = express();
 app.use(express.json());
 
-const PORT = 4000;
+const PORT = process.env.PORT || 3000;
 
 // Configurez ici vos clés VAPID générées via web-push
 const vapidKeys = {
@@ -61,7 +61,6 @@ app.post('/notify', (req, res) => {
   Promise.all(sendNotifications).then(() => res.status(200).json({ message: 'Notifications envoyées.' }));
 });
 
-// Modifier la fonction pour utiliser fetch avec import
 async function checkForUpdates() {
   const apiURL = 'https://pokeapi.co/api/v2/pokemon/';
   const fetch = (await import('node-fetch')).default;
