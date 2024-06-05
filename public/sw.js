@@ -4,10 +4,14 @@ importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.1.5/workbox
 if (workbox) {
   console.log(`Workbox is loaded 🎉`);
   workbox.precaching.precacheAndRoute([
-    {url: '/index.html', revision: null},
-    {url: '/public/style.css', revision: null},
-    {url: '/public/app.js', revision: null},
-    // Assurez-vous d'ajouter des révisions ou de mettre à jour `revision: null` pour une meilleure gestion du cache
+    { url: '/', revision: '1' },
+    { url: '/index.html', revision: '1' },
+    { url: '/app.js', revision: '1' },
+    { url: '/style.css', revision: '1' },
+    { url: '/manifest.json', revision: '1' },
+    { url: '/icons/icon-192x192.png', revision: '1' },
+    { url: '/icons/icon-512x512.png', revision: '1' },
+    { url: '/sw.js', revision: '1' },
   ]);
 
   workbox.routing.registerRoute(
@@ -26,6 +30,23 @@ if (workbox) {
         new workbox.expiration.ExpirationPlugin({
           maxEntries: 50, // Nombre maximum d'entrées dans le cache.
           maxAgeSeconds: 24 * 60 * 60, // Cache pendant 24 heures.
+        }),
+      ],
+    })
+  );
+  
+  // Add a route for caching images
+  workbox.routing.registerRoute(
+    ({request}) => request.destination === 'image',
+    new workbox.strategies.CacheFirst({
+      cacheName: 'image-cache',
+      plugins: [
+        new workbox.expiration.ExpirationPlugin({
+          maxEntries: 100, // Nombre maximum d'entrées dans le cache.
+          maxAgeSeconds: 7 * 24 * 60 * 60, // Cache pendant 7 jours.
+        }),
+        new workbox.cacheableResponse.CacheableResponsePlugin({
+          statuses: [0, 200], // Mettre en cache seulement les réponses avec ces statuts.
         }),
       ],
     })
