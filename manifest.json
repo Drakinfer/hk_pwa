@@ -1,8 +1,0 @@
-{
-    "name": "Hakai Kousen Générator",
-    "short_name": "HK Generator",
-    "start_url": ".",
-    "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#123456"
-  }
