@@ -5,6 +5,7 @@
 
 ## Lancer le serveur
 `node server.js`
+se rendre sur localhost:3000
 
 ## Fonctionnalités
 - Connexion à l'API
