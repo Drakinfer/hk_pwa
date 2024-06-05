@@ -11,26 +11,64 @@ window.addEventListener('load', () => {
     fetchPokemons();
 });
 
-function fetchPokemons() {
-    fetch('https://pokeapi.co/api/v2/pokemon?limit=151')
-        .then(response => response.json())
-        .then(data => displayPokemons(data.results))
-        .catch(error => console.error('Failed to fetch Pokémon', error));
+const pokemonList = document.getElementById('pokemon-list');
+
+async function fetchPokemons() {
+  const response = await fetch('https://pokeapi.co/api/v2/pokemon?limit=151');
+  const data = await response.json();
+  const pokemonResults = data.results;
+
+  const pokemonDetailsPromises = pokemonResults.map(pokemon => fetch(pokemon.url).then(response => response.json()));
+  const pokemonDetails = await Promise.all(pokemonDetailsPromises);
+
+  pokemonDetails.sort((a, b) => a.id - b.id);
+
+  const pokemonSpeciesPromises = pokemonDetails.map(pokemon => fetch(pokemon.species.url).then(response => response.json()));
+  const pokemonSpecies = await Promise.all(pokemonSpeciesPromises);
+
+  pokemonDetails.forEach((pokemon, index) => {
+      const frenchNameEntry = pokemonSpecies[index].names.find(name => name.language.name === 'fr');
+      pokemon.frenchName = frenchNameEntry ? frenchNameEntry.name : pokemon.name;
+  });
+
+    // Précharge les pages des Pokémon
+  preCachePokemonPages(pokemonDetails);
+
+  displayPokemons(pokemonDetails);
+
+
 }
 
 function displayPokemons(pokemons) {
-    const list = document.getElementById('pokemon-list');
-    list.innerHTML = '';
-    pokemons.forEach(pokemon => {
-        fetch(pokemon.url)
-            .then(response => response.json())
-            .then(details => {
-                const listItem = document.createElement('li');
-                listItem.innerHTML = `<img src="${details.sprites.front_default}" alt="${pokemon.name}" /><span>${pokemon.name}</span>`;
-                list.appendChild(listItem);
-            });
-    });
+  const list = document.getElementById('pokemon-list');
+  list.innerHTML = '';
+  pokemons.forEach(pokemon => {
+      const listItem = document.createElement('li');
+      const link = document.createElement('a');
+      link.href = `pokemon.html?id=${pokemon.id}`;
+      link.innerHTML = `<img src="${pokemon.sprites.front_default}" alt="${pokemon.frenchName}" /><span>${pokemon.frenchName}</span>`;
+      listItem.appendChild(link);
+      list.appendChild(listItem);
+  });
 }
+
+async function preCachePokemonPages(pokemons) {
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      const cache = await caches.open('pokemon-pages');
+      const preCachePromises = pokemons.map(pokemon => {
+          const url = new URL(`pokemon.html?id=${pokemon.id}`, location.href);
+          return fetch(url).then(response => {
+              if (response.status === 200) {
+                  return cache.put(url, response);
+              }
+          }).catch(error => {
+              console.error('Failed to fetch and cache', url, error);
+          });
+      });
+      await Promise.all(preCachePromises);
+  }
+}
+
 
 // Vérifiez si le service worker et les push sont supportés
 if ('serviceWorker' in navigator && 'PushManager' in window) {
